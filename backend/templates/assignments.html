@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Assignments{% endblock %}
+{% block content %}
+<h2>Assignments</h2>
+<div class="list-group mt-3">
+  {% for a in assignments %}
+  <div class="list-group-item">
+    <h5>{{ a.title }}</h5>
+    <p class="mb-1">{{ a.description }}</p>
+    {% if a.due_date %}<small class="text-muted">Due: {{ a.due_date }}</small>{% endif %}
+  </div>
+  {% else %}
+  <p class="text-muted">No assignments posted yet.</p>
+  {% endfor %}
+</div>
+{% endblock %}

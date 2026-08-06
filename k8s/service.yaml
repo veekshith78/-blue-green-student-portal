@@ -1,0 +1,55 @@
+# The Service selector is the "switch" in a real Kubernetes blue-green setup.
+# To flip traffic: kubectl patch service student-portal -p
+#   '{"spec":{"selector":{"color":"green"}}}'
+# This changes routing instantly with zero downtime, no pod restarts.
+apiVersion: v1
+kind: Service
+metadata:
+  name: student-portal
+spec:
+  selector:
+    app: student-portal
+    color: blue   # <- change to "green" to switch traffic
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5000
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: student-portal-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+    - host: student-portal.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: student-portal
+                port:
+                  number: 80
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: student-portal-blue-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: student-portal-blue
+  minReplicas: 2
+  maxReplicas: 12
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60

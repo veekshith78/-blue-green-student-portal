@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<h2>Welcome, {{ current_user.name }} 👋</h2>
+<p class="text-muted">
+  Served by <strong>{{ color|upper }}</strong> deployment &middot; version {{ version }}
+</p>
+
+<div class="row mt-4 g-3">
+  <div class="col-md-4">
+    <div class="card text-center shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Attendance</h5>
+        <p class="display-6">{{ attendance_pct }}%</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Notifications</h5>
+        <ul class="list-unstyled mb-0">
+          {% for n in notifications %}
+          <li>🔔 {{ n.message }}</li>
+          {% else %}
+          <li class="text-muted">No notifications</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Upcoming Assignments</h5>
+        <ul class="list-unstyled mb-0">
+          {% for a in assignments %}
+          <li>📘 {{ a.title }} {% if a.due_date %}<span class="text-muted">({{ a.due_date }})</span>{% endif %}</li>
+          {% else %}
+          <li class="text-muted">No assignments</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,10 @@
+body {
+  background-color: #f5f7fa;
+}
+.card {
+  border: none;
+  border-radius: 10px;
+}
+.navbar-brand {
+  font-weight: 600;
+}

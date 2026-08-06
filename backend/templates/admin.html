@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Admin{% endblock %}
+{% block content %}
+<h2>Admin Panel</h2>
+
+<div class="row mt-4 g-4">
+  <div class="col-md-7">
+    <h5>Users</h5>
+    <table class="table table-sm table-striped">
+      <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Mark Attendance</th></tr></thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td>{{ u.name }}</td>
+          <td>{{ u.email }}</td>
+          <td>{{ u.role }}</td>
+          <td>
+            <form method="POST" action="{{ url_for('admin_mark_attendance') }}" class="d-flex gap-1">
+              <input type="hidden" name="user_id" value="{{ u.id }}">
+              <button name="status" value="present" class="btn btn-sm btn-outline-success">Present</button>
+              <button name="status" value="absent" class="btn btn-sm btn-outline-danger">Absent</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="col-md-5">
+    <h5>Send Notification</h5>
+    <form method="POST" action="{{ url_for('admin_notify') }}">
+      <textarea name="message" class="form-control mb-2" placeholder="Notification message" required></textarea>
+      <button class="btn btn-primary">Send</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

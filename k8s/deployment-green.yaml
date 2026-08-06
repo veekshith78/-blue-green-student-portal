@@ -1,0 +1,46 @@
+# Requires a real Kubernetes cluster (minikube, kind, EKS/GKE/AKS, etc.)
+# Apply with: kubectl apply -f k8s/
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: student-portal-green
+  labels:
+    app: student-portal
+    color: green
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: student-portal
+      color: green
+  template:
+    metadata:
+      labels:
+        app: student-portal
+        color: green
+    spec:
+      containers:
+        - name: student-portal
+          image: yourdockerhubuser/student-portal:latest
+          ports:
+            - containerPort: 5000
+          env:
+            - name: DEPLOYMENT_COLOR
+              value: "green"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: student-portal-secrets
+                  key: database-url
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 20

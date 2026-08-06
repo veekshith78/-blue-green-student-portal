@@ -1,0 +1,88 @@
+// Jenkins Declarative Pipeline for the Blue-Green Student Portal.
+//
+// Setup (one-time):
+//   1. Run Jenkins in Docker: see jenkins/README.md in this folder.
+//   2. Create a new Pipeline job in the Jenkins UI, pointing "Pipeline script
+//      from SCM" at your GitHub repo, script path: jenkins/Jenkinsfile
+//   3. Add a GitHub webhook (Settings > Webhooks) to trigger builds on push.
+//   4. Add Docker Hub credentials in Jenkins as "dockerhub-creds".
+//
+pipeline {
+    agent any
+
+    environment {
+        IMAGE_NAME   = "yourdockerhubuser/student-portal"
+        IMAGE_TAG    = "${env.BUILD_NUMBER}"
+        TARGET_COLOR = "green" // pipeline always deploys to the idle color
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                dir('backend') {
+                    sh 'pip install -r requirements.txt'
+                }
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                sh 'PYTHONPATH=backend pytest tests/ -v'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ./backend"
+                sh "docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:latest"
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-creds',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                    sh "docker push ${IMAGE_NAME}:${IMAGE_TAG}"
+                    sh "docker push ${IMAGE_NAME}:latest"
+                }
+            }
+        }
+
+        stage('Deploy to Idle Color') {
+            steps {
+                sh "docker compose up -d --build backend-${TARGET_COLOR}"
+            }
+        }
+
+        stage('Health Check') {
+            steps {
+                sh "sleep 5 && docker compose exec -T backend-${TARGET_COLOR} curl -sf http://localhost:5000/health"
+            }
+        }
+
+        stage('Switch Traffic') {
+            steps {
+                sh "./scripts/switch.sh ${TARGET_COLOR}"
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "Deployment successful. Traffic now on ${TARGET_COLOR}."
+        }
+        failure {
+            echo "Pipeline failed - traffic was NOT switched. Investigate before retrying."
+        }
+    }
+}
