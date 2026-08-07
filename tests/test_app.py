@@ -1,12 +1,22 @@
 """
 Basic tests for the Student Portal app.
-Run from the backend/ directory: pytest ../tests/test_app.py
-Or from repo root:               PYTHONPATH=backend pytest tests/
+Works in two different layouts:
+  - Local dev:  repo/tests/test_app.py, repo/backend/app.py
+  - Inside the Docker image: /app/tests/test_app.py, /app/app.py
 """
 import os
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "backend"))
+_HERE = os.path.dirname(os.path.abspath(__file__))
+_CANDIDATE_DIRS = [
+    os.path.join(_HERE, "..", "backend"),  # local dev layout
+    "/app",                                 # baked into the Docker image
+    os.path.join(_HERE, ".."),              # fallback
+]
+for _dir in _CANDIDATE_DIRS:
+    if os.path.exists(os.path.join(_dir, "app.py")):
+        sys.path.insert(0, _dir)
+        break
 
 import pytest
 from app import app as flask_app, db
