@@ -20,6 +20,15 @@ pipeline {
     agent any
 
     environment {
+        // Jenkins checks the repo out into its own workspace folder, whose
+        // name differs from your manual "blue-green-system" folder. Docker
+        // Compose names its project after that folder by default, which
+        // would spin up a SECOND, separate stack (and fight over the same
+        // host ports like 5432/8080). Pinning the project name here makes
+        // every `docker compose` command in this pipeline operate on the
+        // exact same containers you started by hand with
+        // `docker compose up -d`, instead of creating duplicates.
+        COMPOSE_PROJECT_NAME = "blue-green-system"
         TARGET_COLOR = "green" // pipeline always deploys to the idle color
     }
 
