@@ -1,18 +1,25 @@
 // Jenkins Declarative Pipeline for the Blue-Green Student Portal.
 //
+// This pipeline deliberately does NOT require Python/pip/pytest to be
+// installed on the Jenkins host. It tests inside the same Docker image
+// that gets deployed (pytest is already in backend/requirements.txt), so
+// it works whether Jenkins runs on Windows, Mac, Linux, or in a container -
+// as long as the Docker CLI is on Jenkins' PATH.
+//
+// Prerequisite: the main stack should already be running once via
+// `docker compose up -d` from the project root, so db/redis/nginx exist
+// for this pipeline to deploy the idle color into.
+//
 // Setup (one-time):
-//   1. Run Jenkins in Docker: see jenkins/README.md in this folder.
-//   2. Create a new Pipeline job in the Jenkins UI, pointing "Pipeline script
-//      from SCM" at your GitHub repo, script path: jenkins/Jenkinsfile
-//   3. Add a GitHub webhook (Settings > Webhooks) to trigger builds on push.
-//   4. Add Docker Hub credentials in Jenkins as "dockerhub-creds".
+//   1. Create a Pipeline job pointing "Pipeline script from SCM" at your
+//      GitHub repo, script path: jenkins/Jenkinsfile
+//   2. (Optional, for real remote deploys) add Docker Hub credentials in
+//      Jenkins as "dockerhub-creds" and re-enable the Push stage below.
 //
 pipeline {
     agent any
 
     environment {
-        IMAGE_NAME   = "yourdockerhubuser/student-portal"
-        IMAGE_TAG    = "${env.BUILD_NUMBER}"
         TARGET_COLOR = "green" // pipeline always deploys to the idle color
     }
 
@@ -23,44 +30,24 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Build Images') {
             steps {
-                dir('backend') {
-                    sh 'pip install -r requirements.txt'
-                }
+                sh 'docker compose build backend-blue backend-green'
             }
         }
 
         stage('Run Tests') {
             steps {
-                sh 'PYTHONPATH=backend pytest tests/ -v'
-            }
-        }
-
-        stage('Build Docker Image') {
-            steps {
-                sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ./backend"
-                sh "docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:latest"
-            }
-        }
-
-        stage('Push Docker Image') {
-            steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-creds',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
-                )]) {
-                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
-                    sh "docker push ${IMAGE_NAME}:${IMAGE_TAG}"
-                    sh "docker push ${IMAGE_NAME}:latest"
-                }
+                // Runs pytest INSIDE the built image (pytest is already in
+                // requirements.txt), mounting the tests/ folder in. No host
+                // Python needed.
+                sh 'docker compose run --rm -v "$(pwd)/tests:/app/tests" backend-blue pytest tests -v'
             }
         }
 
         stage('Deploy to Idle Color') {
             steps {
-                sh "docker compose up -d --build backend-${TARGET_COLOR}"
+                sh "docker compose up -d backend-${TARGET_COLOR}"
             }
         }
 
@@ -72,7 +59,7 @@ pipeline {
 
         stage('Switch Traffic') {
             steps {
-                sh "./scripts/switch.sh ${TARGET_COLOR}"
+                sh "bash scripts/switch.sh ${TARGET_COLOR}"
             }
         }
     }
