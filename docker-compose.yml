@@ -29,7 +29,9 @@ services:
   # Application - BLUE (currently live / stable)
   # ---------------------------------------------------------------------
   backend-blue:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     environment:
       DEPLOYMENT_COLOR: blue
       APP_VERSION: "1.0.0"
@@ -45,7 +47,9 @@ services:
   # Application - GREEN (new version being deployed / tested)
   # ---------------------------------------------------------------------
   backend-green:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     environment:
       DEPLOYMENT_COLOR: green
       APP_VERSION: "1.1.0"
@@ -66,7 +70,7 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/active_upstream.conf:/etc/nginx/active_upstream.conf
     ports:
-      - "8090:80"     # <- main entry point: http://localhost:8090
+      - "8080:80"     # <- main entry point: http://localhost:8080
       - "8081:8081"   # <- always blue, for debugging
       - "8082:8082"   # <- always green, for debugging
     depends_on:

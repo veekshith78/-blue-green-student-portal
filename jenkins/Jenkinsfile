@@ -47,10 +47,10 @@ pipeline {
 
         stage('Run Tests') {
             steps {
-                // Runs pytest INSIDE the built image (pytest is already in
-                // requirements.txt), mounting the tests/ folder in. No host
-                // Python needed.
-                sh 'docker compose run --rm -v "$(pwd)/tests:/app/tests" backend-blue pytest tests -v'
+                // tests/ is now baked into the image at build time (see
+                // backend/Dockerfile), so no volume mount needed here -
+                // avoids Windows/Git-Bash path translation issues.
+                sh 'docker compose run --rm backend-blue pytest tests -v'
             }
         }
 

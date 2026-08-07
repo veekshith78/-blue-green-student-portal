@@ -1,0 +1,15 @@
+.git
+.gitignore
+README.md
+*.md
+__pycache__
+*.pyc
+*.db
+.env
+venv/
+backend/instance
+k8s
+monitoring
+jenkins
+nginx
+.pytest_cache
