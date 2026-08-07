@@ -70,7 +70,7 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/active_upstream.conf:/etc/nginx/active_upstream.conf
     ports:
-      - "8080:80"     # <- main entry point: http://localhost:8080
+      - "8090:80"     # <- main entry point: http://localhost:8090
       - "8081:8081"   # <- always blue, for debugging
       - "8082:8082"   # <- always green, for debugging
     depends_on:
