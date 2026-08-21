@@ -9,8 +9,11 @@ else
     export ACTIVE_HOST="${BLUE_HOST}"
 fi
 
-echo "==> Routing traffic to: ${ACTIVE_COLOR} (${ACTIVE_HOST})"
+# Render injects PORT and expects the service to listen on it.
+export PORT="${PORT:-10000}"
 
-envsubst '${ACTIVE_HOST}' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf
+echo "==> Routing traffic to: ${ACTIVE_COLOR} (${ACTIVE_HOST}) on port ${PORT}"
+
+envsubst '${ACTIVE_HOST} ${PORT}' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf
 
 exec nginx -g 'daemon off;'

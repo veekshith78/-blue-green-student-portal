@@ -11,7 +11,7 @@ http {
     resolver 8.8.8.8 valid=30s;
 
     server {
-        listen 10000;
+        listen ${PORT};
 
         location / {
             proxy_pass https://${ACTIVE_HOST};
